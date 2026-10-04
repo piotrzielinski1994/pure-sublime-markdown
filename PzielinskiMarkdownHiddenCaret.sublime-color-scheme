@@ -1,0 +1,10 @@
+{
+	"name": "Markdown Preview (hidden caret)",
+	"globals": {
+		"background": "#1e1e1e",
+		"foreground": "#d4d4d4",
+		"caret": "#1e1e1e00"
+	},
+	"rules": [
+	]
+}

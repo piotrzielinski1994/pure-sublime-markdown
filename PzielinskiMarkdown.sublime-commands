@@ -1,0 +1,10 @@
+[
+	{
+		"caption": "pzielinski-markdown: Preview",
+		"command": "markdown_html_preview"
+	},
+	{
+		"caption": "pzielinski-markdown: Toggle inline images",
+		"command": "markdown_html_images_toggle"
+	}
+]
