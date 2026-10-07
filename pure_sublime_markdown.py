@@ -37,6 +37,7 @@ LINK_RE = re.compile(r'\[([^\]]+)\]\(([^)\s]+)\)')
 BOLD_RE = re.compile(r'\*\*(.+?)\*\*')
 HEADING_RE = re.compile(r'^(#{1,6})\s+(.*\S)\s*$')
 HR_RE = re.compile(r'^\s*(---|\*\*\*|___)\s*$')
+TAG_SRC_RE = re.compile(r'src="[^"]*"', re.IGNORECASE)
 
 _pending = set()
 # Keep PhantomSet refs alive: a collected set removes its phantoms
@@ -83,9 +84,6 @@ def _resolve_img_tag(tag, base_dir):
         return tag
     url = resolve_src(m.group(1), base_dir)
     return TAG_SRC_RE.sub('src="' + url + '"', tag, count=1)
-
-
-TAG_SRC_RE = re.compile(r'src="[^"]*"', re.IGNORECASE)
 
 
 def _inline_format(text):
@@ -135,7 +133,7 @@ def convert_markdown(md_text, base_dir, img_height=150):
             inner = format_mixed(mh.group(2), base_dir)
             html_lines.append('<h{0}>{1}</h{0}>'.format(level, inner))
             continue
-        if IMG_RE.search(line) and not HEADING_RE.match(line):
+        if IMG_RE.search(line):
             # image-only (or image-led) row: keep tags, no <p> wrapper
             html_lines.append('<div class="imgs">' + format_mixed(line, base_dir) + '</div>')
             continue
@@ -154,6 +152,11 @@ h3 {{ color: #f0b429; font-size: 1.2em; }}
 h3 a {{ color: #f0b429; }}
 a {{ color: #4da3ff; }}
 div.rule {{ border-top: 1px solid #555555; margin-top: 16px; margin-bottom: 16px; }}
+/* ST measures the phantom box slightly shorter than the painted content
+   (accumulated line-height rounding), which clips the last ~100px of
+   content at the bottom. padding-bottom is a single measured value, so it
+   absorbs the error and keeps the clip inside this empty area. */
+div.mdprev {{ padding-bottom: 200px; }}
 </style>
 <div class="mdprev">{body}</div>
 """
@@ -184,12 +187,14 @@ def _is_in_preview(view):
 
 
 GENERATED_SCHEME = 'PureSublimeMarkdownHiddenCaret.generated.sublime-color-scheme'
+GENERATED_SCHEME_PATH = 'Packages/User/' + GENERATED_SCHEME
 _last_scheme_colors = (None, None)
 
 
 def _write_preview_scheme(bg, fg):
-    # buffer text fully invisible (no folds, so no fold markers);
-    # phantom HTML carries its own explicit colors
+    # buffer text fully invisible; the source below the phantom is folded,
+    # so fold markers are painted in the background color too; phantom HTML
+    # carries its own explicit colors
     global _last_scheme_colors
     if (bg, fg) == _last_scheme_colors:
         return
@@ -201,9 +206,14 @@ def _write_preview_scheme(bg, fg):
         g.append('\t\t"foreground": "' + bg + '",')
         g.append('\t\t"caret": "' + caret + '",')
         for key in ('invisibles', 'line_highlight', 'selection',
+                    'selection_foreground', 'selection_border',
                     'find_highlight', 'find_highlight_foreground',
+                    'highlight', 'highlight_foreground',
                     'guide', 'active_guide', 'stack_guide',
-                    'brackets_foreground'):
+                    'brackets_foreground', 'tags_foreground',
+                    'fold_marker', 'misspelling', 'minimap_border',
+                    'accent', 'block_caret', 'caret_edge',
+                    'inert_gutter_foreground'):
             g.append('\t\t"' + key + '": "' + bg + '",')
         content = ('{\n\t"name": "Markdown Preview (invisible buffer, generated)",\n'
                    '\t"globals": {\n' + '\n'.join(g) + '\n'
@@ -211,15 +221,20 @@ def _write_preview_scheme(bg, fg):
         with open(path, 'w', encoding='utf-8') as f:
             f.write(content)
         _last_scheme_colors = (bg, fg)
-    except Exception as e:
+    except Exception:
         pass
 
 
 def _preview_colors(src_view):
+    # while the generated scheme is active, style() reports fg==bg, which
+    # would paint the default phantom text in the background color; bg is
+    # still correct there (it is what the generated scheme carries)
     bg, fg = '#343d46', '#d4d4d4'
     try:
         st = src_view.style()
         bg = st.get('background', bg) or bg
+        if src_view.settings().get('color_scheme') == GENERATED_SCHEME_PATH:
+            return bg, fg
         fg = st.get('foreground', fg) or fg
     except Exception:
         pass
@@ -229,8 +244,44 @@ def _preview_colors(src_view):
 def _render_preview_html(view):
     base = _base_dir(view)
     md_text = view.substr(sublime.Region(0, view.size()))
-    fg = _preview_colors(view)[1]
+    # saved on enter_preview: view settings survive an ST restart, unlike
+    # module state, and the view is already on the generated scheme then
+    fg = view.settings().get('pure_md_preview_fg') or _preview_colors(view)[1]
     return build_minihtml(md_text, base, fg)
+
+
+def _apply_preview_settings(view):
+    # buffer text is invisible via the generated scheme (fold markers
+    # painted in the background color as well), phantom carries its own
+    # colors. line_height floors at ~4px no matter how small font_size
+    # gets, so the hidden buffer below the phantom would still add ~760px
+    # of scrollable dead space; folding it collapses the layout instead.
+    # scroll_past_end off removes the overshoot past the layout end.
+    st = view.settings()
+    st.set('markdown_preview_mode', True)
+    st.set('color_scheme', GENERATED_SCHEME_PATH)
+    st.set('font_size', 2)
+    st.set('scroll_past_end', False)
+    st.set('gutter', False)
+    view.set_read_only(True)
+    try:
+        view.sel().clear()
+        view.sel().add(sublime.Region(0))
+        if view.size() > 0:
+            for r in view.folded_regions():
+                view.unfold(r)
+            view.fold(sublime.Region(view.text_point(1, 0), view.size()))
+        view.show(0)
+    except Exception:
+        pass
+
+
+def _update_preview_phantom(view, html):
+    pset = sublime.PhantomSet(view, PREVIEW_PHANTOM_KEY)
+    pset.update([sublime.Phantom(
+        sublime.Region(0), html, sublime.LAYOUT_BLOCK,
+        _on_preview_navigate)])
+    _preview_sets[view.id()] = pset
 
 
 def enter_preview(view):
@@ -248,24 +299,16 @@ def enter_preview(view):
         'color_scheme': st.get('color_scheme'),
         'font_size': st.get('font_size'),
         'gutter': st.get('gutter'),
+        'scroll_past_end': st.get('scroll_past_end'),
     }
     clear_view(view)
     try:
-        # no folds (fold markers cannot be hidden): buffer text is invisible
-        # via the generated scheme, phantom carries explicit colors
         bg, fg = _preview_colors(view)
         _write_preview_scheme(bg, fg)
-        st.set('markdown_preview_mode', True)
-        st.set('color_scheme', 'Packages/User/' + GENERATED_SCHEME)
-        st.set('font_size', 2)
-        st.set('gutter', False)
-        view.set_read_only(True)
-        pset = sublime.PhantomSet(view, PREVIEW_PHANTOM_KEY)
-        pset.update([sublime.Phantom(
-            sublime.Region(0), html, sublime.LAYOUT_BLOCK,
-            _on_preview_navigate)])
-        _preview_sets[view.id()] = pset
-    except Exception as e:
+        st.set('pure_md_preview_fg', fg)
+        _apply_preview_settings(view)
+        _update_preview_phantom(view, html)
+    except Exception:
         traceback.print_exc()
         exit_preview(view)
         return False
@@ -291,11 +334,12 @@ def exit_preview(view):
         pass
     state = _preview_state.pop(view.id(), {})
     try:
-        for key in ('color_scheme', 'font_size', 'gutter'):
+        for key in ('color_scheme', 'font_size', 'gutter', 'scroll_past_end'):
             if state.get(key) is not None:
                 st.set(key, state[key])
             else:
                 st.erase(key)
+        st.erase('pure_md_preview_fg')
         if view.is_read_only():
             view.set_read_only(False)
     except Exception:
@@ -315,15 +359,32 @@ def refresh_inplace_preview(view):
     if not _is_in_preview(view):
         return False
     try:
-        html = _render_preview_html(view)
-        pset = sublime.PhantomSet(view, PREVIEW_PHANTOM_KEY)
-        pset.update([sublime.Phantom(
-            sublime.Region(0), html, sublime.LAYOUT_BLOCK,
-            _on_preview_navigate)])
-        _preview_sets[view.id()] = pset
+        _update_preview_phantom(view, _render_preview_html(view))
     except Exception:
         return False
     return True
+
+
+def _resume_preview_if_needed(view):
+    # after an ST restart the session restores preview-mode view settings
+    # (generated scheme, flags, folds) but phantoms live only in memory:
+    # rebuild the phantom, otherwise the view comes back empty
+    try:
+        if view is None or not view.is_valid():
+            return False
+        st = view.settings()
+        in_preview = bool(st.get('markdown_preview_mode', False)) or (
+            st.get('color_scheme') == GENERATED_SCHEME_PATH)
+        if not in_preview or _preview_sets.get(view.id()) is not None:
+            return False
+        html = _render_preview_html(view)
+        _apply_preview_settings(view)
+        _update_preview_phantom(view, html)
+        sublime.status_message('Markdown preview on')
+        return True
+    except Exception:
+        traceback.print_exc()
+        return False
 
 
 def _base_dir(view):
@@ -452,10 +513,14 @@ def _schedule(view_id):
 
 class PureSublimeMarkdownShow(sublime_plugin.EventListener):
     def on_load(self, view):
+        if _resume_preview_if_needed(view):
+            return
         if is_markdown_view(view):
             _schedule(view.id())
 
     def on_activated(self, view):
+        if _resume_preview_if_needed(view):
+            return
         if is_markdown_view(view):
             _schedule(view.id())
 
@@ -507,7 +572,8 @@ class PureSublimeMarkdownWheelCommand(sublime_plugin.TextCommand):
             direction = float(direction)
         except Exception:
             direction = 1.0
-        if _is_in_preview(v):
+        in_preview = _is_in_preview(v)
+        if in_preview:
             step = 200.0 if fast else 350.0
         else:
             try:
@@ -519,7 +585,18 @@ class PureSublimeMarkdownWheelCommand(sublime_plugin.TextCommand):
             step = (10.0 if fast else 3.0) * lh
         try:
             x, y = v.viewport_position()
-            v.set_viewport_position((x, y + direction * step), False)
+            target = y + direction * step
+            if in_preview:
+                # clamp to the bottom of the preview phantom: below it lies
+                # the hidden source buffer, reachable via native scrollbar
+                # scrolling as dead empty space at the end
+                try:
+                    y_max = max(0.0, v.text_to_layout(v.text_point(1, 0))[1]
+                                - v.viewport_extent()[1])
+                    target = min(max(0.0, target), y_max)
+                except Exception:
+                    pass
+            v.set_viewport_position((x, target), False)
         except Exception:
             pass
 
@@ -551,5 +628,7 @@ def plugin_loaded():
         pass
     for w in sublime.windows():
         for v in w.views():
+            if _resume_preview_if_needed(v):
+                continue
             if is_markdown_view(v):
                 _schedule(v.id())
