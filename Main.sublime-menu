@@ -17,7 +17,8 @@
 								"command": "edit_settings",
 								"args": {
 									"base_file": "${packages}/PzielinskiMarkdown/PzielinskiMarkdown.sublime-settings",
-									"user_file": "${packages}/User/PzielinskiMarkdown.sublime-settings"
+									"user_file": "${packages}/User/PzielinskiMarkdown.sublime-settings",
+									"default": "{}"
 								}
 							},
 							{

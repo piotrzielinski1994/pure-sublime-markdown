@@ -6,5 +6,12 @@
 	{
 		"caption": "pzielinski-markdown: Toggle inline images",
 		"command": "markdown_html_images_toggle"
+	},
+	{
+		"caption": "Preferences: PzielinskiMarkdown Settings",
+		"command": "edit_settings",
+		"args": {
+			"base_file": "${packages}/PzielinskiMarkdown/PzielinskiMarkdown.sublime-settings"
+		}
 	}
 ]
