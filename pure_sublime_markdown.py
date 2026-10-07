@@ -23,10 +23,10 @@ except ImportError:
 
 
 SETTINGS_FILE = 'PureSublimeMarkdown.sublime-settings'
-PHANTOM_KEY = 'markdown_html_images'
-PREVIEW_PHANTOM_KEY = 'markdown_html_preview'
-REGION_RED = 'markdown_html_red'
-REGION_GREEN = 'markdown_html_green'
+PHANTOM_KEY = 'pure_sublime_markdown_images'
+PREVIEW_PHANTOM_KEY = 'pure_sublime_markdown_preview'
+REGION_RED = 'pure_sublime_markdown_red'
+REGION_GREEN = 'pure_sublime_markdown_green'
 
 IMG_RE = re.compile(r'<img\s+[^>]*?src="([^"]+)"[^>]*?>', re.IGNORECASE)
 TAG_RE = re.compile(r'(<img\s+[^>]*?>|<\s*span[^>]*>|<\s*/\s*span\s*>)', re.IGNORECASE)
@@ -478,17 +478,17 @@ class PureSublimeMarkdownShow(sublime_plugin.EventListener):
         _preview_state.pop(view.id(), None)
 
 
-class MarkdownHtmlImagesShowCommand(sublime_plugin.TextCommand):
+class PureSublimeMarkdownImagesShowCommand(sublime_plugin.TextCommand):
     def run(self, edit, show_local=True, show_remote=True):
         update_view_phantoms(self.view, show_remote=show_remote)
 
 
-class MarkdownHtmlImagesHideCommand(sublime_plugin.TextCommand):
+class PureSublimeMarkdownImagesHideCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         clear_view(self.view)
 
 
-class MarkdownHtmlImagesToggleCommand(sublime_plugin.TextCommand):
+class PureSublimeMarkdownImagesToggleCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         s = _settings()
         s.set('enabled', not s.get('enabled', True))
@@ -499,7 +499,7 @@ class MarkdownHtmlImagesToggleCommand(sublime_plugin.TextCommand):
             clear_view(self.view)
 
 
-class MarkdownHtmlWheelCommand(sublime_plugin.TextCommand):
+class PureSublimeMarkdownWheelCommand(sublime_plugin.TextCommand):
     # plain wheel replacement: pixel scroll in preview, line scroll elsewhere
     def run(self, edit, direction=1, fast=False):
         v = self.view
@@ -524,7 +524,7 @@ class MarkdownHtmlWheelCommand(sublime_plugin.TextCommand):
             pass
 
 
-class MarkdownHtmlPreviewCommand(sublime_plugin.TextCommand):
+class PureSublimeMarkdownPreviewCommand(sublime_plugin.TextCommand):
     def run(self, edit):
         if _is_in_preview(self.view):
             exit_preview(self.view)

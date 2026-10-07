@@ -1,11 +1,11 @@
 [
 	{
 		"caption": "Pure Sublime Markdown: Preview",
-		"command": "markdown_html_preview"
+		"command": "pure_sublime_markdown_preview"
 	},
 	{
 		"caption": "Pure Sublime Markdown: Toggle inline images",
-		"command": "markdown_html_images_toggle"
+		"command": "pure_sublime_markdown_images_toggle"
 	},
 	{
 		"caption": "Preferences: Pure Sublime Markdown Settings",

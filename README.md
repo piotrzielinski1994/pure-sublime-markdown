@@ -33,7 +33,7 @@ from `Example.sublime-keymap` to your
 `Packages/User/Default (<platform>).sublime-keymap`:
 
 ```json
-[{ "keys": ["ctrl+shift+v"], "command": "markdown_html_preview" }]
+[{ "keys": ["ctrl+shift+v"], "command": "pure_sublime_markdown_preview" }]
 ```
 
 For fast scroll, add to your
