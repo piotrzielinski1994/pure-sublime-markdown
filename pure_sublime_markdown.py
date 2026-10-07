@@ -22,7 +22,7 @@ except ImportError:
         return _cgi.escape(s, quote=False)
 
 
-SETTINGS_FILE = 'PzielinskiMarkdown.sublime-settings'
+SETTINGS_FILE = 'PureSublimeMarkdown.sublime-settings'
 PHANTOM_KEY = 'markdown_html_images'
 PREVIEW_PHANTOM_KEY = 'markdown_html_preview'
 REGION_RED = 'markdown_html_red'
@@ -183,7 +183,7 @@ def _is_in_preview(view):
         return False
 
 
-GENERATED_SCHEME = 'PzielinskiMarkdownHiddenCaret.generated.sublime-color-scheme'
+GENERATED_SCHEME = 'PureSublimeMarkdownHiddenCaret.generated.sublime-color-scheme'
 _last_scheme_colors = (None, None)
 
 
@@ -450,7 +450,7 @@ def _schedule(view_id):
     sublime.set_timeout(_run, 400)
 
 
-class PzielinskiMarkdownShow(sublime_plugin.EventListener):
+class PureSublimeMarkdownShow(sublime_plugin.EventListener):
     def on_load(self, view):
         if is_markdown_view(view):
             _schedule(view.id())
