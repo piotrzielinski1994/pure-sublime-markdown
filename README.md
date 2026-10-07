@@ -28,14 +28,28 @@ Requires Sublime Text 4 (build 4073+).
 
 ## Key bindings and mouse (opt-in)
 
-The package ships with no active key bindings. To enable them, uncomment
-the lines in `Default (<platform>).sublime-keymap` /
-`Default (<platform>).sublime-mousemap`:
+The package ships with no active key or mouse bindings. Copy the example
+from `Example.sublime-keymap` to your
+`Packages/User/Default (<platform>).sublime-keymap`:
+
+```json
+[{ "keys": ["ctrl+shift+v"], "command": "markdown_html_preview" }]
+```
+
+For fast scroll, add to your
+`Packages/User/Default (<platform>).sublime-mousemap`:
+
+```json
+[
+	{ "button": "scroll_up", "modifiers": ["alt"], "command": "scroll_lines", "args": { "amount": 10.0 } },
+	{ "button": "scroll_down", "modifiers": ["alt"], "command": "scroll_lines", "args": { "amount": -10.0 } }
+]
+```
 
 1. `Ctrl+Shift+V` - toggle in-place preview (same as VS Code).
 2. `Alt` + mouse wheel - fast scroll (~10 lines per tick).
 
-## Settings (`pzielinski_markdown.sublime-settings`)
+## Settings (`PzielinskiMarkdown.sublime-settings`)
 
 1. `enabled` - inline images on/off (default `true`).
 2. `image_height` - thumbnail height in px (default `150`).

@@ -22,7 +22,7 @@ except ImportError:
         return _cgi.escape(s, quote=False)
 
 
-SETTINGS_FILE = 'pzielinski_markdown.sublime-settings'
+SETTINGS_FILE = 'PzielinskiMarkdown.sublime-settings'
 PHANTOM_KEY = 'markdown_html_images'
 PREVIEW_PHANTOM_KEY = 'markdown_html_preview'
 REGION_RED = 'markdown_html_red'

@@ -1,5 +1,0 @@
-[
-	// Uncomment to enable Alt + wheel fast scroll (~10 lines per tick).
-	// { "button": "scroll_up", "modifiers": ["alt"], "command": "scroll_lines", "args": { "amount": 10.0 } },
-	// { "button": "scroll_down", "modifiers": ["alt"], "command": "scroll_lines", "args": { "amount": -10.0 } }
-]

@@ -16,15 +16,16 @@
 								"caption": "Settings",
 								"command": "edit_settings",
 								"args": {
-									"base_file": "${packages}/PzielinskiMarkdown/pzielinski_markdown.sublime-settings"
+									"base_file": "${packages}/PzielinskiMarkdown/PzielinskiMarkdown.sublime-settings",
+									"user_file": "${packages}/User/PzielinskiMarkdown.sublime-settings"
 								}
 							},
 							{
-								"caption": "Key Bindings",
+								"caption": "Example Key Bindings",
 								"command": "edit_settings",
 								"args": {
-									"base_file": "${packages}/PzielinskiMarkdown/Default ($platform).sublime-keymap",
-									"default": "[\n\t$0\n]\n"
+									"base_file": "${packages}/PzielinskiMarkdown/Example.sublime-keymap",
+									"user_file": "${packages}/User/Default (${platform}).sublime-keymap"
 								}
 							}
 						]
